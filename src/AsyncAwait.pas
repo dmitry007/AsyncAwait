@@ -222,6 +222,23 @@ const
 
 function CoGetObjectContext(const riid: TGUID; out ObjectContext: IUnknown): HRESULT; stdcall; external 'Ole32.dll';
 
+procedure CheckRaiseCOMError(res: HResult; const FuncName: string);
+
+  function ErrorToString(res: HResult) : string;
+  begin
+    Result := '0x' + IntToHex(res, 8);
+    //todo: symbolic error codes
+  end;
+
+var
+  strError: string;
+begin
+  if not SUCCEEDED(res) then begin
+    strError := ErrorToString(res);
+    raise EOleSysError.Create('Error in ' + FuncName + ': ' + strError, res, 0);
+  end;
+end;
+
 { TTask }
 
 class function TTask.Async(proc: TaskProc; continueWith: TaskProcContinue;
@@ -667,17 +684,17 @@ begin
 
   //Thread type
   res := CoGetObjectContext(IID_IComThreadingInfo, unk);
-  if not SUCCEEDED(res) then raise EOleSysError.Create('CoGetObjectContext(IID_IComThreadingInfo)', res, 0);
+  CheckRaiseCOMError(res, 'CoGetObjectContext(IID_IComThreadingInfo)');
   res := unk.QueryInterface(IComThreadingInfo, ComThreadingInfo);
-  if not SUCCEEDED(res) then raise EOleSysError.Create('IUnknown.QueryInterface(IID_IComThreadingInfo)', res, 0);
+  CheckRaiseCOMError(res, 'IUnknown.QueryInterface(IID_IComThreadingInfo)');
   res := ComThreadingInfo.GetCurrentThreadType(fThreadType);
-  if not SUCCEEDED(res) then raise EOleSysError.Create('IComThreadingInfo.GetCurrentThreadType', res, 0);
+  CheckRaiseCOMError(res, 'IComThreadingInfo.GetCurrentThreadType)');
 
   //IContextCallback
   res := CoGetObjectContext(IID_IContextCallback, unk);
-  if not SUCCEEDED(res) then raise EOleSysError.Create('CoGetObjectContext(IID_IContextCallback)', res, 0);
+  CheckRaiseCOMError(res, 'CoGetObjectContext(IID_IContextCallback)');
   res := unk.QueryInterface(IContextCallback, fContextCallback);
-  if not SUCCEEDED(res) then raise EOleSysError.Create('IUnknown.QueryInterface(IID_IContextCallback)', res, 0);
+  CheckRaiseCOMError(res, 'IUnknown.QueryInterface(IID_IContextCallback)');
 end;
 
 class function TSynchronizationContext.Current: ISynchronizationContext;
