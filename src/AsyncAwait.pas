@@ -18,85 +18,84 @@ type
 
   {$SCOPEDENUMS ON}
   TTaskStatus = (Canceled, Created, Faulted, RanToCompletion, Running,
-                 WaitingForActivation, WaitingForChildrenToComplete, WaitingToRun);
+                 WaitingForActivation, WaitingForChildrenToComplete,
+                 WaitingToRun);
   {$SCOPEDENUMS OFF}
 
-  TTask = class;
   TTask<T> = class;
-  //ITaskScheduler = interface;
   ITask  = interface;
   ITask<T>  = interface;
   ISynchronizationContext = interface;
 
   TaskProc = reference to procedure();
-  TaskFunc<T>  = reference to function() : T;
+  TaskFunc<T>  = reference to function(): T;
 
-  TaskProcContinue = reference to procedure(task : ITask);
-  TaskProcContinue<T> = reference to procedure(task : ITask<T>; Value : T);
+  TaskProcContinue = reference to procedure(task: ITask);
+  TaskProcContinue<T> = reference to procedure(task: ITask<T>; Value: T);
 
   CancellationProc = reference to procedure();
 
   ICancellationToken = interface(IUnknown)
   ['{46B7C425-9978-4EB7-97C7-4D51AC58DF8A}']
-    procedure Register(proc : CancellationProc);
-    function GetCanBeCanceled : boolean;
-    function GetIsCancellationRequested : boolean;
-    function GetWaitHandle : THandle;
+    procedure Register(proc: CancellationProc);
+    function GetCanBeCanceled: boolean;
+    function GetIsCancellationRequested: boolean;
+    function GetWaitHandle: THandle;
     procedure Cancel;
     //properties
-    property CanBeCanceled : boolean read GetCanBeCanceled;
-    property IsCancellationRequested : boolean read GetIsCancellationRequested;
-    property WaitHandle : THandle read GetWaitHandle;
+    property CanBeCanceled: boolean read GetCanBeCanceled;
+    property IsCancellationRequested: boolean read GetIsCancellationRequested;
+    property WaitHandle: THandle read GetWaitHandle;
   end;
 
   ITask = interface(IUnknown)
   ['{DA0AD6C4-B37F-4461-B054-E57F85305F09}']
-    function ContinueWith(proc : TaskProcContinue):ITask;overload;
-    function ContinueWith(proc : TaskProcContinue; SynchronizationContext : ISynchronizationContext):ITask;overload;
-    function GetException : Exception;
-    function GetCancellationToken : ICancellationToken;
-    function GetStatus : TTaskStatus;
-    function GetWaitHandle : THandle;
+    function ContinueWith(proc: TaskProcContinue):ITask;overload;
+    function ContinueWith(proc: TaskProcContinue; SynchronizationContext: ISynchronizationContext):ITask;overload;
+    function GetException: Exception;
+    function GetCancellationToken: ICancellationToken;
+    function GetStatus: TTaskStatus;
+    function GetWaitHandle: THandle;
     procedure Wait;overload;
-    function Wait(milliseconds : integer) : boolean;overload;
+    function Wait(milliseconds: integer): boolean;overload;
     procedure Start;
-    function ConfigureAwait(continueOnCapturedContext : boolean) : ITask;overload;
+    function ConfigureAwait(continueOnCapturedContext: boolean): ITask;overload;
     //properties
-    property Exception : Exception read GetException;
-    property CancellationToken : ICancellationToken read GetCancellationToken;
-    property Status : TTaskStatus read GetStatus;
-    property WaitHandle : THandle read GetWaitHandle;
+    property Exception: Exception read GetException;
+    property CancellationToken: ICancellationToken read GetCancellationToken;
+    property Status: TTaskStatus read GetStatus;
+    property WaitHandle: THandle read GetWaitHandle;
   end;
 
   ITask<T> = interface(ITask)
   ['{20C06A9C-75F8-4674-A70D-A6418081D2EA}']
-    function ContinueWith(proc : TaskProcContinue<T>) : ITask<T>;overload;
-    function ContinueWith(proc : TaskProcContinue<T>; SynchronizationContext : ISynchronizationContext):ITask<T>;overload;
-    function GetValue : T;
-    procedure SetValue(Value : T);
-    function ConfigureAwait(continueOnCapturedContext : boolean) : ITask<T>;overload;
+    function ContinueWith(proc: TaskProcContinue<T>): ITask<T>;overload;
+    function ContinueWith(proc: TaskProcContinue<T>; SynchronizationContext: ISynchronizationContext):ITask<T>;overload;
+    function GetValue: T;
+    procedure SetValue(Value: T);
+    function ConfigureAwait(continueOnCapturedContext: boolean): ITask<T>;overload;
     //properties
-    property Value : T read GetValue write SetValue;
+    property Value: T read GetValue write SetValue;
   end;
 
   ISynchronizationContext = interface
   ['{0871D95C-28CA-4B6D-AE1B-F07A0F3F28FB}']
-    function GetContextCallback : IContextCallback;
-    function GetThreadType : THDTYPE;
-    property ContextCallback : IContextCallback read GetContextCallback;
-    property ThreadType : THDTYPE read GetThreadType;
+    function GetContextCallback: IContextCallback;
+    function GetThreadType: THDTYPE;
+    property ContextCallback: IContextCallback read GetContextCallback;
+    property ThreadType: THDTYPE read GetThreadType;
   end;
 
   TSynchronizationContext = class(TInterfacedObject, ISynchronizationContext)
   protected
-    fContextCallback : IContextCallback;
-    fThreadType : THDTYPE;
+    fContextCallback: IContextCallback;
+    fThreadType: THDTYPE;
     constructor CreateNew;
   public
-    class function Current : ISynchronizationContext;
+    class function Current: ISynchronizationContext;
 
-    function GetThreadType : THDTYPE;
-    function GetContextCallback : IContextCallback;
+    function GetThreadType: THDTYPE;
+    function GetContextCallback: IContextCallback;
   end;
 
   ///disable
@@ -108,111 +107,112 @@ type
     type
       TTaskThread = class(TThread)
       private
-        fTask : TTask;
+        fTask: TTask;
       protected
         procedure Execute;override;
       public
-        constructor Create(task : TTask);
+        constructor Create(task: TTask);
       end;
 
   private
-    fStatus : TTaskStatus;
-    fThread : TTaskThread;
+    fStatus: TTaskStatus;
+    fThread: TTaskThread;
     fException: Exception;
-    fProc : TaskProc;
-    fContinueWith : TaskProcContinue;
-    fContinueOnCapturedContext : boolean;
-    fCancellationToken : ICancellationToken;
-    fWaitHandle : THandle;
+    fProc: TaskProc;
+    fContinueWith: TaskProcContinue;
+    fContinueOnCapturedContext: boolean;
+    fCancellationToken: ICancellationToken;
+    fWaitHandle: THandle;
 
-    fSynchronizationContext : ISynchronizationContext;
+    fSynchronizationContext: ISynchronizationContext;
 
     procedure ThreadProc;
   protected
-    constructor CreateNew(proc : TaskProc;
-                       continueWith : TaskProcContinue;
-                       continueOnCapturedContext : boolean;
-                       CancellationToken : ICancellationToken);overload;
+    constructor CreateNew(proc: TaskProc;
+                       continueWith: TaskProcContinue;
+                       continueOnCapturedContext: boolean;
+                       CancellationToken: ICancellationToken);overload;
 
     destructor Destroy;override;
     procedure DoExecute;virtual;
     procedure DoContinue;virtual;
-    function NeedToContinue : boolean;virtual;
+    function NeedToContinue: boolean;virtual;
   public
-    class function Async(proc : TaskProc;
-                         continueWith : TaskProcContinue;
-                         continueOnCapturedContext : boolean;
-                         CancellationToken : ICancellationToken) : ITask;overload;
-    class function Async(proc : TaskProc) : ITask; overload;
-    class function Async(proc : TaskProc; continueWith : TaskProcContinue) : ITask; overload;
-    class function Async(proc : TaskProc; continueWith : TaskProcContinue; continueOnCapturedContext : boolean) : ITask; overload;
-    class function Async(proc : TaskProc; continueWith : TaskProcContinue; CancellationToken : ICancellationToken) : ITask; overload;
+    class function Async(proc: TaskProc;
+                         continueWith: TaskProcContinue;
+                         continueOnCapturedContext: boolean;
+                         CancellationToken: ICancellationToken): ITask;overload;
+    class function Async(proc: TaskProc): ITask; overload;
+    class function Async(proc: TaskProc; continueWith: TaskProcContinue): ITask; overload;
+    class function Async(proc: TaskProc; continueWith: TaskProcContinue; continueOnCapturedContext: boolean): ITask; overload;
+    class function Async(proc: TaskProc; continueWith: TaskProcContinue; CancellationToken: ICancellationToken): ITask; overload;
 
-    class function Run(proc : TaskProc) : ITask; overload;
-    class function Run(proc : TaskProc; CancellationToken : ICancellationToken) : ITask; overload;
+    class function Run(proc: TaskProc): ITask; overload;
+    class function Run(proc: TaskProc; CancellationToken: ICancellationToken): ITask; overload;
 
-    class function Create(proc : TaskProc;
-                       continueWith : TaskProcContinue;
-                       continueOnCapturedContext : boolean;
-                       CancellationToken : ICancellationToken) : ITask; overload;
-    class function Create(proc : TaskProc) : ITask; overload;
-    class function Create(proc : TaskProc; continueWith : TaskProcContinue) : ITask; overload;
-    class function Create(proc : TaskProc; continueWith : TaskProcContinue; continueOnCapturedContext : boolean) : ITask;overload;
-    class function Create(proc : TaskProc; continueWith : TaskProcContinue; CancellationToken : ICancellationToken) : ITask;overload;
+    class function Create(proc: TaskProc;
+                       continueWith: TaskProcContinue;
+                       continueOnCapturedContext: boolean;
+                       CancellationToken: ICancellationToken): ITask; overload;
+    class function Create(proc: TaskProc): ITask; overload;
+    class function Create(proc: TaskProc; continueWith: TaskProcContinue): ITask; overload;
+    class function Create(proc: TaskProc; continueWith: TaskProcContinue; continueOnCapturedContext: boolean): ITask;overload;
+    class function Create(proc: TaskProc; continueWith: TaskProcContinue; CancellationToken: ICancellationToken): ITask;overload;
 
-    function ContinueWith(proc : TaskProcContinue) : ITask;overload;
-    function ContinueWith(proc : TaskProcContinue; SynchronizationContext : ISynchronizationContext):ITask;overload;
-    function ConfigureAwait(continueOnCapturedContext : boolean) : ITask;overload;
-    function GetException : Exception;
-    function GetCancellationToken : ICancellationToken;
-    function GetStatus : TTaskStatus;
-    function GetWaitHandle : THandle;
+    function ContinueWith(proc: TaskProcContinue): ITask;overload;
+    function ContinueWith(proc: TaskProcContinue; SynchronizationContext: ISynchronizationContext):ITask;overload;
+    function ConfigureAwait(continueOnCapturedContext: boolean): ITask;overload;
+    function GetException: Exception;
+    function GetCancellationToken: ICancellationToken;
+    function GetStatus: TTaskStatus;
+    function GetWaitHandle: THandle;
     procedure Start;
     procedure Wait;overload;
-    function Wait(milliseconds : integer) : boolean; overload;
-    class procedure WhenAll(const tasks : array of ITask);
-    class procedure WhenAny(const tasks : array of ITask);
+    function Wait(milliseconds: integer): boolean; overload;
+
+    class procedure WhenAll(const tasks: array of ITask);
+    class procedure WhenAny(const tasks: array of ITask);
   end;
   {$HINTS ON}
 
   TTask<T> = class(TTask, ITask<T>)
   private
-    fValue : T;
-    fFunc : TaskFunc<T>;
-    fContinueWithT : TaskProcContinue<T>;
+    fValue: T;
+    fFunc: TaskFunc<T>;
+    fContinueWithT: TaskProcContinue<T>;
   protected
-    constructor CreateNew(func : TaskFunc<T>;
-                       continueWith : TaskProcContinue<T>;
-                       continueOnCapturedContext : boolean;
-                       CancellationToken : ICancellationToken);overload;
+    constructor CreateNew(func: TaskFunc<T>;
+                       continueWith: TaskProcContinue<T>;
+                       continueOnCapturedContext: boolean;
+                       CancellationToken: ICancellationToken);overload;
     procedure DoExecute;override;
     procedure DoContinue;override;
-    function NeedToContinue : boolean;override;
+    function NeedToContinue: boolean;override;
   public
-    class function Async(func : TaskFunc<T>;
-                         continueWith : TaskProcContinue<T>;
-                         continueOnCapturedContext : boolean;
-                         CancellationToken : ICancellationToken) : ITask<T>;overload;
-    class function Async(func : TaskFunc<T>) : ITask<T>; overload;
-    class function Async(func : TaskFunc<T>; continueWith : TaskProcContinue<T>) : ITask<T>; overload;
-    class function Async(func : TaskFunc<T>; continueWith : TaskProcContinue<T>; continueOnCapturedContext : boolean) : ITask<T>; overload;
-    class function Async(func : TaskFunc<T>; continueWith : TaskProcContinue<T>; CancellationToken : ICancellationToken) : ITask<T>; overload;
+    class function Async(func: TaskFunc<T>;
+                         continueWith: TaskProcContinue<T>;
+                         continueOnCapturedContext: boolean;
+                         CancellationToken: ICancellationToken): ITask<T>;overload;
+    class function Async(func: TaskFunc<T>): ITask<T>; overload;
+    class function Async(func: TaskFunc<T>; continueWith: TaskProcContinue<T>): ITask<T>; overload;
+    class function Async(func: TaskFunc<T>; continueWith: TaskProcContinue<T>; continueOnCapturedContext: boolean): ITask<T>; overload;
+    class function Async(func: TaskFunc<T>; continueWith: TaskProcContinue<T>; CancellationToken: ICancellationToken): ITask<T>; overload;
 
-    class function Create(func : TaskFunc<T>;
-                       continueWith : TaskProcContinue<T>;
-                       continueOnCapturedContext : boolean;
-                       CancellationToken : ICancellationToken) : ITask<T>;overload;
-    class function Create(func : TaskFunc<T>) : ITask<T>;overload;
-    class function Create(func : TaskFunc<T>; continueWith : TaskProcContinue<T>) : ITask<T>;overload;
-    class function Create(func : TaskFunc<T>; continueWith : TaskProcContinue<T>; continueOnCapturedContext : boolean) : ITask<T>;overload;
-    class function Create(func : TaskFunc<T>; continueWith : TaskProcContinue<T>; CancellationToken : ICancellationToken) : ITask<T>;overload;
+    class function Create(func: TaskFunc<T>;
+                       continueWith: TaskProcContinue<T>;
+                       continueOnCapturedContext: boolean;
+                       CancellationToken: ICancellationToken): ITask<T>;overload;
+    class function Create(func: TaskFunc<T>): ITask<T>;overload;
+    class function Create(func: TaskFunc<T>; continueWith: TaskProcContinue<T>): ITask<T>;overload;
+    class function Create(func: TaskFunc<T>; continueWith: TaskProcContinue<T>; continueOnCapturedContext: boolean): ITask<T>;overload;
+    class function Create(func: TaskFunc<T>; continueWith: TaskProcContinue<T>; CancellationToken: ICancellationToken): ITask<T>;overload;
 
-    function ContinueWith(proc : TaskProcContinue<T>) : ITask<T>;overload;
-    function ContinueWith(proc : TaskProcContinue<T>; SynchronizationContext : ISynchronizationContext):ITask<T>;overload;
+    function ContinueWith(proc: TaskProcContinue<T>): ITask<T>;overload;
+    function ContinueWith(proc: TaskProcContinue<T>; SynchronizationContext: ISynchronizationContext):ITask<T>;overload;
 
-    function ConfigureAwait(continueOnCapturedContext : boolean) : ITask<T>;overload;
-    function GetValue : T;
-    procedure SetValue(Value : T);
+    function ConfigureAwait(continueOnCapturedContext: boolean): ITask<T>;overload;
+    function GetValue: T;
+    procedure SetValue(Value: T);
   end;
 
 implementation
@@ -224,7 +224,7 @@ function CoGetObjectContext(const riid: TGUID; out ObjectContext: IUnknown): HRE
 
 procedure CheckRaiseCOMError(res: HResult; const FuncName: string);
 
-  function ErrorToString(res: HResult) : string;
+  function ErrorToString(res: HResult): string;
   begin
     Result := '0x' + IntToHex(res, 8);
     //todo: symbolic error codes
@@ -278,36 +278,36 @@ begin
   Result := Self;
 end;
 
-function TTask.ContinueWith(proc: TaskProcContinue; SynchronizationContext : ISynchronizationContext): ITask;
+function TTask.ContinueWith(proc: TaskProcContinue; SynchronizationContext: ISynchronizationContext): ITask;
 begin
   fContinueWith := proc;
   fSynchronizationContext := SynchronizationContext;
   Result := Self;
 end;
 
-class function TTask.Create(proc: TaskProc) : ITask;
+class function TTask.Create(proc: TaskProc): ITask;
 begin
   Result := CreateNew(proc, nil, true, nil) as ITask;
 end;
 
-function TTask.ContinueWith(proc: TaskProcContinue) : ITask;
+function TTask.ContinueWith(proc: TaskProcContinue): ITask;
 begin
   Result := ContinueWith(proc, nil);
 end;
 
-class function TTask.Create(proc: TaskProc; continueWith: TaskProcContinue) : ITask;
+class function TTask.Create(proc: TaskProc; continueWith: TaskProcContinue): ITask;
 begin
   Result := CreateNew(proc, continueWith, true, nil) as ITask;
 end;
 
 class function TTask.Create(proc: TaskProc; continueWith: TaskProcContinue;
-  continueOnCapturedContext: boolean) : ITask;
+  continueOnCapturedContext: boolean): ITask;
 begin
   Result := CreateNew(proc, continueWith, continueOnCapturedContext, nil) as ITask;
 end;
 
 class function TTask.Create(proc: TaskProc; continueWith: TaskProcContinue;
-  CancellationToken: ICancellationToken) : ITask;
+  CancellationToken: ICancellationToken): ITask;
 begin
   Result := CreateNew(proc, continueWith, true, CancellationToken) as ITask;
 end;
@@ -404,9 +404,9 @@ begin
   fThread.Start; //Resume;
 end;
 
-function ContinueCallback(const pParam : ComCallData) : HResult; stdcall;
+function ContinueCallback(const pParam: ComCallData): HResult; stdcall;
 var
-  task : TTask;
+  task: TTask;
 begin
   Result := S_OK;
   task := nil;
@@ -427,10 +427,10 @@ end;
 
 procedure TTask.ThreadProc;
 var
-  ComCallData : TComCallData;
+  ComCallData: TComCallData;
   res: HRESULT;
-  syncContext : ISynchronizationContext;
-  contextCallback : IContextCallback;
+  syncContext: ISynchronizationContext;
+  contextCallback: IContextCallback;
 begin
   fStatus := TTaskStatus.Running;
 
@@ -502,9 +502,9 @@ begin
   Result := WaitForSingleObject(fWaitHandle, milliseconds) = WAIT_OBJECT_0;
 end;
 
-procedure WaitForTasks(const tasks: array of ITask; waitAll : boolean);
+procedure WaitForTasks(const tasks: array of ITask; waitAll: boolean);
 var
-  handleArray : PWOHandleArray;
+  handleArray: PWOHandleArray;
   i: Integer;
 begin
   if Length(tasks) > MAXIMUM_WAIT_OBJECTS
@@ -582,43 +582,43 @@ begin
   Result := Self;
 end;
 
-function TTask<T>.ContinueWith(proc: TaskProcContinue<T>; SynchronizationContext : ISynchronizationContext): ITask<T>;
+function TTask<T>.ContinueWith(proc: TaskProcContinue<T>; SynchronizationContext: ISynchronizationContext): ITask<T>;
 begin
   fContinueWithT := proc;
   fSynchronizationContext := SynchronizationContext;
   Result := Self;
 end;
 
-class function TTask<T>.Create(func: TaskFunc<T>) : ITask<T>;
+class function TTask<T>.Create(func: TaskFunc<T>): ITask<T>;
 begin
   Result := CreateNew(func, nil, true, nil) as ITask<T>;
 end;
 
-function TTask<T>.ContinueWith(proc: TaskProcContinue<T>) : ITask<T>;
+function TTask<T>.ContinueWith(proc: TaskProcContinue<T>): ITask<T>;
 begin
   Result := ContinueWith(proc, nil);
 end;
 
 class function TTask<T>.Create(func: TaskFunc<T>;
   continueWith: TaskProcContinue<T>; continueOnCapturedContext: boolean;
-  CancellationToken: ICancellationToken) : ITask<T>;
+  CancellationToken: ICancellationToken): ITask<T>;
 begin
   Result := CreateNew(func, continueWith, continueOnCapturedContext, CancellationToken) as ITask<T>;
 end;
 
-class function TTask<T>.Create(func: TaskFunc<T>; continueWith: TaskProcContinue<T>) : ITask<T>;
+class function TTask<T>.Create(func: TaskFunc<T>; continueWith: TaskProcContinue<T>): ITask<T>;
 begin
   Result := CreateNew(func, continueWith, true, nil)  as ITask<T>;
 end;
 
 class function TTask<T>.Create(func: TaskFunc<T>;
-  continueWith: TaskProcContinue<T>; continueOnCapturedContext: boolean) : ITask<T>;
+  continueWith: TaskProcContinue<T>; continueOnCapturedContext: boolean): ITask<T>;
 begin
   Result := CreateNew(func, continueWith, continueOnCapturedContext, nil)  as ITask<T>;
 end;
 
 class function TTask<T>.Create(func: TaskFunc<T>;
-  continueWith: TaskProcContinue<T>; CancellationToken: ICancellationToken) : ITask<T>;
+  continueWith: TaskProcContinue<T>; CancellationToken: ICancellationToken): ITask<T>;
 begin
   Result := CreateNew(func, continueWith, true, CancellationToken)  as ITask<T>;
 end;
@@ -712,5 +712,4 @@ begin
   Result := fThreadType;
 end;
 
-initialization
 end.

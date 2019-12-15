@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'AsyncAwait Demo'
-  ClientHeight = 101
-  ClientWidth = 260
+  ClientHeight = 126
+  ClientWidth = 314
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,13 +13,29 @@ object Form1: TForm1
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
+  object lblResult: TLabel
+    Left = 16
+    Top = 39
+    Width = 87
+    Height = 13
+    Caption = 'Fibonacci number:'
+  end
   object Button1: TButton
     Left = 8
-    Top = 24
-    Width = 233
+    Top = 72
+    Width = 297
     Height = 25
     Caption = 'Run demo task'
     TabOrder = 0
     OnClick = Button1Click
+  end
+  object btnFibonacci: TButton
+    Left = 8
+    Top = 8
+    Width = 297
+    Height = 25
+    Caption = 'Calculate random Fibonacci number'
+    TabOrder = 1
+    OnClick = btnFibonacciClick
   end
 end
