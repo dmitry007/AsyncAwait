@@ -655,35 +655,6 @@ begin
   fValue := Value;
 end;
 
-(*
-{ TTaskScheduler }
-
-constructor TTaskScheduler.Create;
-begin
-
-end;
-
-class function TTaskScheduler.Current: ITaskScheduler;
-begin
-
-end;
-
-class function TTaskScheduler.Default: ITaskScheduler;
-begin
-
-end;
-
-function TTaskScheduler.GetContextCallback: IContextCallback;
-begin
-
-end;
-
-function TTaskScheduler.GetId: string;
-begin
-
-end;
-*)
-
 { TSynchronizationContext }
 
 constructor TSynchronizationContext.CreateNew;
