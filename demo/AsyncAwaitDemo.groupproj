@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{E7076A5F-4354-4AA4-825D-13BE7F2FD9F2}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Forms\AsyncAwaitDemoForm.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="CommandLine\AsyncAwaitDemoCmd.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="AsyncAwaitDemoForm">
+        <MSBuild Projects="Forms\AsyncAwaitDemoForm.dproj"/>
+    </Target>
+    <Target Name="AsyncAwaitDemoForm:Clean">
+        <MSBuild Projects="Forms\AsyncAwaitDemoForm.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="AsyncAwaitDemoForm:Make">
+        <MSBuild Projects="Forms\AsyncAwaitDemoForm.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="AsyncAwaitDemoCmd">
+        <MSBuild Projects="CommandLine\AsyncAwaitDemoCmd.dproj"/>
+    </Target>
+    <Target Name="AsyncAwaitDemoCmd:Clean">
+        <MSBuild Projects="CommandLine\AsyncAwaitDemoCmd.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="AsyncAwaitDemoCmd:Make">
+        <MSBuild Projects="CommandLine\AsyncAwaitDemoCmd.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="AsyncAwaitDemoForm;AsyncAwaitDemoCmd"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="AsyncAwaitDemoForm:Clean;AsyncAwaitDemoCmd:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="AsyncAwaitDemoForm:Make;AsyncAwaitDemoCmd:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
