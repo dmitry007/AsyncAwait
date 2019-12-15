@@ -1,38 +1,11 @@
-unit AsyncAwait;
-
-
 (*
 
-  TTask.Async(
-              procedure
-              begin
-                sleep(10000);
-              end,
-
-              procedure(TTask : TTask)
-              begin
-              end);
-
-  t := TTask<integer>.Async(
-              //async function
-              procedure
-              var
-                delay : integer;
-              begin
-                delay := Random(10000);
-                sleep(delay);
-                Result := delay;
-              end,
-              //continue with
-              procedure(TTask : TTask<integer>, Value : integer )
-              begin
-                ShowMessage(Format('All done after sleeping for %d seconds', [Value]));
-              end);
-  if t.Wait(5000)
-    then ShowMessage(Fomrat('Done after waiting for 5 seconds. Task returned %d', [t.Value]);
-    else ShowMessage('Still not done after waiting for 5 seconds');
+  Copyright 2019 Dmitry Streblechenko (dmitry@dimastr.com)
+  Licensed under MIT license
 
 *)
+
+unit AsyncAwait;
 
 interface
 
