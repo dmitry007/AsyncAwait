@@ -9,10 +9,10 @@ uses
 
 type
   TForm1 = class(TForm)
-    Button1: TButton;
+    btnDemo: TButton;
     btnFibonacci: TButton;
     lblResult: TLabel;
-    procedure Button1Click(Sender: TObject);
+    procedure btnDemoClick(Sender: TObject);
     procedure btnFibonacciClick(Sender: TObject);
   private
     { Private declarations }
@@ -58,11 +58,13 @@ var
 begin
   seed := Random(MaxInt);
   lblResult.Caption := Format('Calculating Fibonacci number for %d. Please wait...', [seed]);
+  btnFibonacci.Enabled := false;// we will re-enable it when we are done
   TTask<UInt64>.Async(
               //timeconsuming call on a secondary thread
               function : UInt64
               begin
                 Result := Fibonacci(seed);
+                //raise Exception.Create('Error Message');
               end,
               //update the UI on the main thread
               procedure(task : ITask<UInt64>; Value : UInt64)
@@ -70,7 +72,9 @@ begin
                 if task.Status = TTaskStatus.RanToCompletion
                   then lblResult.Caption := Format('Fibonacci number for %d is %d', [seed, Value])
                 else if task.Status = TTaskStatus.Faulted
-                  then lblResult.Caption := Format('Error calculating Fibonacci number: %s', [task.Exception.Message])
+                  then lblResult.Caption := Format('Error calculating Fibonacci number: %s', [task.Exception.Message]);
+                //re-enable the button - we are done
+                btnFibonacci.Enabled := true;
               end,
               //tell to continue on the main thread -
               //don't need to specify this parameter as it defaults to true anyway
@@ -78,11 +82,14 @@ begin
               );
 end;
 
-procedure TForm1.Button1Click(Sender: TObject);
+procedure TForm1.btnDemoClick(Sender: TObject);
 var
   t : ITask<integer>;
   syncContext : ISynchronizationContext;
 begin
+
+  btnDemo.Enabled := false; //we will reenable it when we are done
+
   syncContext := TSynchronizationContext.Current;
 
   t := TTask<integer>.Async(
@@ -113,7 +120,7 @@ begin
                      //use the sync context from the main thread since we are showing a window
                      syncContext
                      ).
-                   //now start the task after we configured it
+                   //now start the task after we configured it;
                    Start;
               end,
 
@@ -125,13 +132,16 @@ begin
                 if task.Status = TTaskStatus.RanToCompletion
                   then ShowMessage(Format('All done after sleeping for %d seconds', [task.Value div 1000]))
                 else if task.Status = TTaskStatus.Faulted
-                  then ShowMessage(Format('Task faulted. Exception type = %s: %s', [task.Exception.ClassName, task.Exception.Message]))
+                  then ShowMessage(Format('Task faulted. Exception type = %s: %s', [task.Exception.ClassName, task.Exception.Message]));
+                //re-enable the buttton
+                btnDemo.Enabled := true;
               end,
-              //continue on the main thread - don't need to specify this parameter as it defaults to true
+              //continue on the main thread - we don't need to specify this parameter
+              //as it defaults to true anyway
               true
                 );
-  if t.Wait(2000)
-    then ShowMessage(Format('Done after waiting for less than 2 seconds. Task returned %d', [t.Value]))
+  if t.Wait(20000) //Wait is smart enough not to block on continuation call above executed on the same thread
+    then ShowMessage(Format('Done after waiting for less than 20 seconds. Task returned %d', [t.Value]))
     else ShowMessage('Still not done after waiting for 2 seconds');
 end;
 

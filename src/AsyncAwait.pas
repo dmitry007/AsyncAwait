@@ -56,8 +56,9 @@ type
     function GetCancellationToken: ICancellationToken;
     function GetStatus: TTaskStatus;
     function GetWaitHandle: THandle;
+    function GetSynchronizationContext : ISynchronizationContext;
     procedure Wait;overload;
-    function Wait(milliseconds: integer): boolean;overload;
+    function Wait(milliseconds: DWORD): boolean;overload;
     procedure Start;
     function ConfigureAwait(continueOnCapturedContext: boolean): ITask;overload;
     //properties
@@ -65,6 +66,7 @@ type
     property CancellationToken: ICancellationToken read GetCancellationToken;
     property Status: TTaskStatus read GetStatus;
     property WaitHandle: THandle read GetWaitHandle;
+    property SynchronizationContext : ISynchronizationContext read GetSynchronizationContext;
   end;
 
   ITask<T> = interface(ITask)
@@ -127,6 +129,7 @@ type
     fSynchronizationContext: ISynchronizationContext;
 
     procedure ThreadProc;
+    class procedure WaitForTasks(const tasks: array of ITask; waitAll: boolean);
   protected
     constructor CreateNew(proc: TaskProc;
                        continueWith: TaskProcContinue;
@@ -166,9 +169,10 @@ type
     function GetCancellationToken: ICancellationToken;
     function GetStatus: TTaskStatus;
     function GetWaitHandle: THandle;
+    function GetSynchronizationContext : ISynchronizationContext;
     procedure Start;
     procedure Wait;overload;
-    function Wait(milliseconds: integer): boolean; overload;
+    function Wait(milliseconds: DWORD): boolean; overload;
 
     class procedure WhenAll(const tasks: array of ITask);
     class procedure WhenAny(const tasks: array of ITask);
@@ -216,6 +220,9 @@ type
   end;
 
 implementation
+
+uses
+  Math;
 
 const
   IID_IObjectContext: TGUID = '{51372AE0-CAE7-11CF-BE81-00AA00A2FA25}';
@@ -333,6 +340,7 @@ end;
 
 destructor TTask.Destroy;
 begin
+  FreeAndNil(fException);
   CloseHandle(fWaitHandle);
   inherited;
 end;
@@ -360,6 +368,11 @@ end;
 function TTask.GetStatus: TTaskStatus;
 begin
   Result := fStatus;
+end;
+
+function TTask.GetSynchronizationContext: ISynchronizationContext;
+begin
+  Result := fSynchronizationContext;
 end;
 
 function TTask.GetWaitHandle: THandle;
@@ -416,12 +429,13 @@ begin
       task.DoContinue();
     end;
   except
-    on E:Exception do begin
-      task.fStatus := TTaskStatus.Faulted;
-      task.fException := Exception(AcquireExceptionObject);
-      if E is EOleSysError then Result := EOleSysError(E).ErrorCode
-      else Result := E_FAIL;
-    end;
+    task.fStatus := TTaskStatus.Faulted;
+    FreeAndNil(task.fException);
+    task.fException := Exception(AcquireExceptionObject);
+    if (task.fException <> nil) and (task.fException is EOleSysError) then
+      Result := EOleSysError(task.fException).ErrorCode
+    else
+      Result := E_FAIL;
   end;
 end;
 
@@ -433,6 +447,7 @@ var
   contextCallback: IContextCallback;
 begin
   fStatus := TTaskStatus.Running;
+  FreeAndNil(fException);
 
   try
     CoInitializeEx(nil, COINIT_MULTITHREADED);
@@ -449,10 +464,9 @@ begin
           fStatus := TTaskStatus.RanToCompletion;
         end;
       except
-        on E:Exception do begin
-          fStatus := TTaskStatus.Faulted;
-          fException := Exception(AcquireExceptionObject);
-        end;
+        fStatus := TTaskStatus.Faulted;
+        FreeAndNil(fException);
+        fException := Exception(AcquireExceptionObject);
       end;
 
       //continue
@@ -475,7 +489,8 @@ begin
                                            5, nil);
         end;
         if not SUCCEEDED(res) then begin
-          fException := EOleSysError.Create('IContextCallback.ContextCallback', res, 0);
+          //fException might already be set in ContinueCallback
+          if fException = nil then fException := EOleSysError.Create('IContextCallback.ContextCallback', res, 0);
           fStatus := TTaskStatus.Faulted;
         end
       end;
@@ -494,15 +509,69 @@ end;
 
 procedure TTask.Wait;
 begin
-  WaitForSingleObject(fWaitHandle, INFINITE);
+  Wait(INFINITE)
 end;
 
-function TTask.Wait(milliseconds: integer): boolean;
+function TTask.Wait(milliseconds: DWORD): boolean;
+var
+  delta: DWORD;
+  msg: tagMSG;
+  endTime, currTime : UInt64;
+  ft : TFileTime;
 begin
-  Result := WaitForSingleObject(fWaitHandle, milliseconds) = WAIT_OBJECT_0;
+  if (fSynchronizationContext = nil) or (not NeedToContinue) or
+     (fSynchronizationContext.ThreadType <> THDTYPE_PROCESSMESSAGES) //only if messages do not need to be pumped
+  then begin
+    //just wait for as long as we are told
+    Result := WaitForSingleObject(fWaitHandle, milliseconds) = WAIT_OBJECT_0;
+  end
+  else begin
+    //WaitForSingleObject can block the continuation synchronization call.
+    //Run a message loop to allow the COM system to process the mesages
+    //every 50 milliseonds
+    GetSystemTimeAsFileTime(ft);
+    //end wait time in 100ns units
+    endTime := milliseconds*10000 + ft.dwLowDateTime + (UInt64(ft.dwHighDateTime) shl 32);
+
+    delta := MinIntValue([50, milliseconds]);
+    repeat
+      Result := WaitForSingleObject(fWaitHandle, delta) = WAIT_OBJECT_0;
+      if Result then Break;
+
+      //did the wait expire?
+      GetSystemTimeAsFileTime(ft);
+      currTime := ft.dwLowDateTime + (UInt64(ft.dwHighDateTime) shl 32);
+      if currTime > endTime then Break; //wait expired
+
+      //run the mesage pump until we are out of messages
+      while PeekMessage(msg, 0, 0, 0, PM_REMOVE) do begin
+        TranslateMessage(msg);
+        DispatchMessage(msg);
+      end;
+
+      //did the wait expire?
+      GetSystemTimeAsFileTime(ft);
+      currTime := ft.dwLowDateTime + (UInt64(ft.dwHighDateTime) shl 32);
+      if currTime > endTime then Break; //wait expired
+
+      //how long do we need to wait?
+      if currTime + delta*10000 > endTime
+        then delta := (endTime - currTime) div 10000
+        else delta := 50; //50 milliseconds
+
+    until false;
+  end;
+
+  if fException <> nil then begin
+    try
+      raise fException;
+    finally
+      fException := nil; //will be freed by the exception handler
+    end;
+  end;
 end;
 
-procedure WaitForTasks(const tasks: array of ITask; waitAll: boolean);
+class procedure TTask.WaitForTasks(const tasks: array of ITask; waitAll: boolean);
 var
   handleArray: PWOHandleArray;
   i: Integer;
@@ -513,10 +582,15 @@ begin
   handleArray := GetMemory(SizeOf(THandle)*Length(tasks));
   try
     for i := 0 to Length(tasks)-1 do handleArray[i] := tasks[i].WaitHandle;
+    //todo: implement logic similar to that in TTask.Wait to wait in chunks if necessary (ITask.SynchronizationContext <> nil)
     WaitForMultipleObjects(Length(tasks), handleArray, waitAll, INFINITE);
   finally
     FreeMemory(handleArray);
   end;
+
+  for i := 0 to Length(tasks)-1 do if tasks[i].Exception <> nil
+    then tasks[i].Wait(0); //the wait is immediate, but it will cause the task to raise an exception
+
 end;
 
 class procedure TTask.WhenAll(const tasks: array of ITask);
@@ -655,7 +729,7 @@ begin
     try
       raise fException;
     finally
-      fException := nil; //since it is no longer valid
+      fException := nil; //since it is no longer valid and except handler will release it
     end;
   end;
 

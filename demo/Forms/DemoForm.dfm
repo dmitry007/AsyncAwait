@@ -20,14 +20,14 @@ object Form1: TForm1
     Height = 13
     Caption = 'Fibonacci number:'
   end
-  object Button1: TButton
+  object btnDemo: TButton
     Left = 8
     Top = 72
     Width = 297
     Height = 25
     Caption = 'Run demo task'
     TabOrder = 0
-    OnClick = Button1Click
+    OnClick = btnDemoClick
   end
   object btnFibonacci: TButton
     Left = 8
