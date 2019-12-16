@@ -1,5 +1,5 @@
 # AsyncAwait
-This library (Delphi 10 or higher) exposes loose equivalents of the **Task** and **Task&lt;&gt;** objects in .Net that use COM infrastructure (**IContextCallback.ContextCallback**) to synchronize continuation calls on the main or any arbitrary thread. The same API is used by **async/await** in C# and **co_await** in VC++. 
+This library (Delphi 10 or higher) exposes loose equivalents of the **Task** and **Task&lt;T&gt;** objects in .Net that use COM infrastructure (**IContextCallback.ContextCallback**) to synchronize continuation calls on the main or any arbitrary thread. The same API is used by **async/await** in C# and **co_await** in VC++. 
 The library works in both exe and dll projects and (unlike **TThread.Synchornize**) does not rely on periodic calls to **CheckSynchronize**. 
 
 The source code is licensed under the MIT license.
